@@ -21,6 +21,13 @@ fn get_port() -> u16 {
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
+
+    let port = get_port();
+
+    let addr = match env::var("SERVER_HOST") {
+        Ok(host) => host,
+        Err(_e) => format!("0.0.0.0:{}", get_port()),
+    };
     
     HttpServer::new(|| {
         App::new()
@@ -28,7 +35,8 @@ async fn main() -> std::io::Result<()> {
             .route("/{name}", web::get().to(greet))
             .wrap(Logger::default())
     })
-    .bind(format!("127.0.0.1:{}", get_port()))?
+    .bind(&addr)?
+    .shutdown_timeout(1)
     .run()
     .await
 }
